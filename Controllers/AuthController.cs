@@ -33,7 +33,7 @@ namespace SchoolEventsAPI.Controllers
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 DisplayName = dto.DisplayName,
-                Role = "User" // Default role
+                Role = "student" // Default role
             };
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
