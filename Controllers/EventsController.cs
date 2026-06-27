@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using SchoolEventsAPI.Data;
 using SchoolEventsAPI.DTOs;
 using SchoolEventsAPI.Models;
-using System.Reflection;
 using System.Security.Claims;
 
 namespace SchoolEventsAPI.Controllers
@@ -29,15 +28,9 @@ namespace SchoolEventsAPI.Controllers
         [Authorize]
         public async Task<IActionResult> CreateEvent(CreateEventDTO dto)
         {
-
-            if (CurrentUserRole != "organizer") // Only Admins can create events
+            if (CurrentUserRole != "organizer")
             {
                 return Forbid("Only administrators can create events.");
-            }
-
-            if (dto.Capacity < 1)
-            {
-                return BadRequest("Capacity must be at least 1.");
             }
 
             var newEvent = new Event
@@ -65,7 +58,7 @@ namespace SchoolEventsAPI.Controllers
             if (CurrentUserRole == "student")
             {
                 query = query.Where(e => e.Status == "PUBLISHED");
-            } 
+            }
             else if (CurrentUserRole == "organizer")
             {
                 query = query.Where(e => e.OrganizerId == CurrentUserId);
@@ -77,7 +70,7 @@ namespace SchoolEventsAPI.Controllers
             foreach (var e in events)
             {
                 var confirmed = await _db.Registrations.CountAsync(r => r.EventId == e.Id && r.Status == "CONFIRMED");
-                var waitlist = await _db.Registrations.CountAsync(r => r.EventId == e.Id && r.Status == "WAITLIST");
+                var waitlist = await _db.Registrations.CountAsync(r => r.EventId == e.Id && r.Status == "WAITLISTED");
                 result.Add(ToResponseDTO(e, confirmed, waitlist));
             }
 
@@ -93,7 +86,7 @@ namespace SchoolEventsAPI.Controllers
             {
                 return NotFound();
             }
-            
+
             if (CurrentUserRole == "student" && ev.Status != "PUBLISHED")
             {
                 return NotFound();
@@ -157,14 +150,12 @@ namespace SchoolEventsAPI.Controllers
                 return BadRequest(new { error = "Only DRAFT events can be published" });
 
             ev.Status = "PUBLISHED";
-
             await _db.SaveChangesAsync();
 
             // Worker
 
             return Ok(ToResponseDTO(ev, 0, 0));
         }
-
 
         [HttpPost("{id}/cancel")]
         [Authorize]
@@ -186,6 +177,70 @@ namespace SchoolEventsAPI.Controllers
             // Worker
 
             return Ok(ToResponseDTO(ev, 0, 0));
+        }
+
+        [HttpGet("{id}/registrations")]
+        [Authorize]
+        public async Task<IActionResult> GetRegistrations(int id)
+        {
+            if (CurrentUserRole != "organizer")
+                return Forbid();
+
+            var ev = await _db.Events.FindAsync(id);
+            if (ev == null)
+                return NotFound();
+
+            if (ev.OrganizerId != CurrentUserId)
+                return Forbid();
+
+            var registrations = await _db.Registrations
+                .Where(r => r.EventId == id && r.Status == "CONFIRMED")
+                .Include(r => r.User)
+                .OrderBy(r => r.RegisteredAt)
+                .Select(r => new
+                {
+                    RegistrationId = r.Id,
+                    r.UserId,
+                    r.User.DisplayName,
+                    r.User.Email,
+                    r.RegisteredAt
+                })
+                .ToListAsync();
+
+            return Ok(registrations);
+        }
+
+        [HttpGet("{id}/waitlist")]
+        [Authorize]
+        public async Task<IActionResult> GetWaitlist(int id)
+        {
+            if (CurrentUserRole != "organizer")
+                return Forbid();
+
+            var ev = await _db.Events.FindAsync(id);
+            if (ev == null)
+                return NotFound();
+
+            if (ev.OrganizerId != CurrentUserId)
+                return Forbid();
+
+            var waitlist = await _db.Registrations
+                .Where(r => r.EventId == id && r.Status == "WAITLISTED")
+                .Include(r => r.User)
+                .OrderBy(r => r.RegisteredAt)
+                .ToListAsync();
+
+            var result = waitlist.Select((r, index) => new WaitlistEntryDTO
+            {
+                RegistrationId = r.Id,
+                UserId = r.UserId,
+                DisplayName = r.User.DisplayName,
+                Email = r.User.Email,
+                Position = index + 1,
+                RegisteredAt = r.RegisteredAt
+            });
+
+            return Ok(result);
         }
 
         private static EventResponseDTO ToResponseDTO(Event ev, int confirmed, int waitlisted) => new()
