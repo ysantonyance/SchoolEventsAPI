@@ -18,7 +18,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Services\" />
+    <Compile Remove="SchoolEvents.Worker\**\*.cs" />
+    <Content Remove="SchoolEvents.Worker\**\*" />
+    <None Remove="SchoolEvents.Worker\**\*" />
   </ItemGroup>
 
 </Project>

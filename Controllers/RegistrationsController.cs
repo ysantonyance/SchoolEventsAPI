@@ -69,6 +69,7 @@ namespace SchoolEventsAPI.Controllers
                 Status = "pending",
                 AttemptCount = 0,
                 IdempotencyKey = $"{reg.Id}:{(status == "CONFIRMED" ? "RegistrationConfirmed" : "RegistrationWaitlisted")}",
+                ErrorMessage = string.Empty,
                 CreatedAt = DateTime.UtcNow
             });
 
@@ -126,6 +127,7 @@ namespace SchoolEventsAPI.Controllers
                         Status = "pending",
                         AttemptCount = 0,
                         IdempotencyKey = $"{next.Id}:WaitlistPromoted",
+                        ErrorMessage = string.Empty,
                         CreatedAt = DateTime.UtcNow
                     });
                 }
@@ -138,6 +140,7 @@ namespace SchoolEventsAPI.Controllers
                 Status = "pending",
                 AttemptCount = 0,
                 IdempotencyKey = $"{reg.Id}:RegistrationCancelled",
+                ErrorMessage = string.Empty,
                 CreatedAt = DateTime.UtcNow
             });
 

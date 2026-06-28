@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="SchoolEventsAPI.csproj" />
+  <Project Path="SchoolEvents.Worker\SchoolEvents.Worker.csproj" />
 </Solution>
