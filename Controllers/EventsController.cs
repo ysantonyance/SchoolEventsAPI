@@ -30,7 +30,7 @@ namespace SchoolEventsAPI.Controllers
         {
             if (CurrentUserRole != "organizer")
             {
-                return Forbid("Only administrators can create events.");
+                return Forbid();
             }
 
             var newEvent = new Event

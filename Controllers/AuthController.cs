@@ -36,7 +36,14 @@ namespace SchoolEventsAPI.Controllers
                 Role = "student" // Default role
             };
             _db.Users.Add(user);
-            await _db.SaveChangesAsync();
+            try
+            {
+                await _db.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                return BadRequest(new { message = "Email already exists." });
+            }
             return Ok(new { message = "User registered successfully." });
         }
 

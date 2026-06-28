@@ -29,10 +29,7 @@ namespace SchoolEvents.Worker.Services
                     var processor = scope.ServiceProvider.GetRequiredService<NotificationJobProcessor>();
                     var processedCount = await processor.ProcessPendingJobsAsync(stoppingToken);
 
-                    if (processedCount == 0)
-                    {
-                        await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-                    }
+                    await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
